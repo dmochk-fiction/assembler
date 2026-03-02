@@ -1,18 +1,23 @@
 bits 64
 ; ( (a * b * c) - (c * d * e) ) / ( a / b + c / d)
-section .data
-a: dd 11
 
-b: dd 12
+section .bss
+res: dq 0
+section .data
+a: dd 12191
+
+b: dd 1000
 
 c: dq 100
 
-d: dw 7
+d: dw 330
 
-e: db 7
+e: db 100
 section .text
 global _start
 _start:
+	mov rax, 0
+	
 	mov ebx, [b]
 	or ebx, ebx
 	jz err ; check if number b equals zero to escape zero division
@@ -61,13 +66,15 @@ _start:
 	
 	; (a / b) + (c / d)
 	add rdi, rsi ; no chance of overflow
-	jc err
+	jc err ; 
+	jz err ; to exclude zero in denominator
 
 	mov rdx, r8
 	mov rax, r9
 
 	div rdi
-
+	mov [res], rdi
+	
 	mov rax, 60
 	mov rdi, 0
 	syscall
