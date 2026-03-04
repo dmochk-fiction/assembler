@@ -32,18 +32,25 @@ min: ; find minimal element in raw of 'cols' elements
 	mov [ebp + 4], bl ; store number of elements (columns) in raw
  
 	mov eax, [current_raw] ; eax = first number of raw
-	mov bl, cols ; bl = number of (elements) columns in raw
+	mov bl, 0 ; countdown for cycle
 	jmp .loopa ; go to cycle
 
 .loopa:
-	dec bl ; decrement countdown 
-	jz .exit_function ; if bl = 0 then we exit from function 'min'
+	inc bl ; increment countdown 
+	cmp bl, cols ; while bl is less than number columns (cols)
+	jz .exit_function ; if bl = cols then we exit from function 'min'
 
-	cmp eax, [current_raw + 4 * (cols - bl)]
-
+	cmp eax, [current_raw + 4 * bl] ; compare current minimal number (stored in eax) 
+	jg .condition
+	
 .condition:
-
+	mov eax, [current_raw + 4 * bl]
+	
 .exit_function:
+	mov rsp, rbp ; set initial state of rsp
+	add rsp, 5
+	pop rbp
+
 	ret
 
 	
