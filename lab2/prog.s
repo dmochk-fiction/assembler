@@ -9,10 +9,17 @@ section .bss
 min_el: resd 1
 current_raw: resq 1
 
+raw_ptr: res
+
 section .data
-matrix: dd 11, -123, 99, -32, 123, 55, 23, 1, 49
+
+struc rawp_min
+	.min_el: resd 0
+	.raw_pinter: resq 0
+endstruc
+
+matrix: dd 11, -1000, 99, -3221, 123, 55, 23, 1, 49
 	
-row_ptr: dq 0, 0, 0
 
 global _start
 
@@ -57,7 +64,7 @@ min: ; find minimal element in raw of 'cols' elements
 	jmp .loopa
 
 .condition:
-	mov eax, [rsi + 4 * rbx] ; new minimal value is that one in squared brackets
+	movsx rax, dword [rsi + 4 * rbx] ; new minimal value is that one in squared brackets
 	inc rbx ; increment countdown 
 	jmp .loopa
 
