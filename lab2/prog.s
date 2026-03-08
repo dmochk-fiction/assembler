@@ -5,7 +5,7 @@ COLS equ 3
 RAWS equ 3
 
 section .rodata
-rows: db RAWS
+raws: db RAWS
 cols: db COLS
 
 
@@ -23,7 +23,9 @@ struc ptr_min ; creating struture to simplify comprehension of following code
 	.min: resd 1 ; need to reserve 4 bytes for dword matrix element
 endstruc 
 
-arr_pm: times RAWS istruc ptr_min iend ; array consists of above defined structure
+ptr_min_size equ 12 ; in bytes
+
+arr_pm: times RAWS * ptr_min_size db 0 ; array consists of above defined structure
 
 matrix: dd 11, -1000, 99, -3221, 123, 55, 23, 1, 49 ; matrix ;)
 raw_size: dq COLS * 4
@@ -32,8 +34,7 @@ global _start
 
 section .text
 _start:
-	mov qword [current_raw], matrix
-	call min
+	call process_matrix
 	
  	mov rax, 60
 	xor rdi, rdi
@@ -44,13 +45,16 @@ _start:
 process_matrix: ; this function will fill 'arr_pm' with structure 'ptr_min'
 	push rbp ; store basic pointer in stack
 	mov rbp, rsp ; save value of 'rsp' in base pointer not to lose 
-	sub rsp, 8 ; so now we allocated memory and saved address of 'rsp'
+	sub rsp, 16 ; so now we allocated memory and saved address of 'rsp'
 
 	mov [rbp - 8], rcx ; to store rcx value in stack while processing
- 	
+ 	mov [rbp - 16], rax
+
 	xor rcx, rcx ; to escape rubbish in rcx
-	mov cl, raws ; = raws ; beacuse raws <= 255
-	dec cl ; to have 'raws' iterations of cycle but start from zero to easily process first raw
+	xor rax, rax ; to escape rubbish in rax
+	
+	
+	mov cl, [raws] ; = raws ; beacuse raws <= 255
 
 	mov r8, 0 ; = index of raw => loop from zero	
 	
@@ -61,22 +65,29 @@ process_matrix: ; this function will fill 'arr_pm' with structure 'ptr_min'
 	cmp r8, rcx
 	jz .exit
 	
-	mov current_raw, r9 ; current_raw stores pointer to raw to be processed in 'min' function
-	mov [arr_pm + r8 * ptr_min_size + ptr_min.ptr], r9 ;
+	mov rax, ptr_min_size ; rax stores ptr_min_size to be multiplied later
+	mov [current_raw], r9 ; current_raw stores pointer to raw to be processed in 'min' function
+	
+	mul r8 ; because no capability to multiply r8 by ptr_min_size due to scale ist not equal 1, 2, 4, 8
+	; rax = ptr_min_size * r8 (scale * index)
+	mov [arr_pm + rax + ptr_min.ptr], r9 ;
+	
 	call min
-	add r9, raw_size
+	add r9, [raw_size]
+
 	movsx r10, dword [min_el]
-	mov [arr_pm + r8 * ptr_min_size + ptr_min.min], r10 
+	mov [arr_pm + rax + ptr_min.min], r10 
 	
 	inc r8
 
 	jmp .loop
 .exit:
 	mov rcx, [rbp - 8] ; give back 'rcx' its value
- 	
+ 	mov rax, [rbp - 16] ; give back 'rax' its value
+
 	mov rsp, rbp
 	pop rbp
-
+	ret
 
 
 
@@ -108,7 +119,7 @@ min: ; find minimal element in raw of 'cols' elements
 	xor rax, rax ; to make rax be zero
 
 	mov rsi, [current_raw] ; current_raw is address that stores current_raw address 
-	mov eax, [rsi] ; eax = first number of raw
+	movsx rax, dword [rsi] ; rax = first number of raw
 	mov rbx, 1 ; countdown for cycle
 	
 	xor rcx, rcx
