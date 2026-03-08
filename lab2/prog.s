@@ -1,25 +1,32 @@
 bits 64
 ; matrix; heap sort; pointer array
 
+COLS equ 3
+RAWS equ 3
+
 section .rodata
-rows: db 3
-cols: db 3
+rows: db RAWS
+cols: db COLS
+
+
 
 section .bss
 min_el: resd 1
 current_raw: resq 1
 
-raw_ptr: res
+
 
 section .data
 
-struc rawp_min
-	.min_el: resd 0
-	.raw_pinter: resq 0
-endstruc
+struc ptr_min ; creating struture to simplify comprehension of following code	
+	.ptr: resq 1 ; in x86_64 address consists of 8 bytes
+	.min: resd 1 ; need to reserve 4 bytes for dword matrix element
+endstruc 
 
-matrix: dd 11, -1000, 99, -3221, 123, 55, 23, 1, 49
-	
+arr_pm: times RAWS istruc ptr_min iend ; array consists of above defined structure
+
+matrix: dd 11, -1000, 99, -3221, 123, 55, 23, 1, 49 ; matrix ;)
+raw_size: dq COLS * 4
 
 global _start
 
@@ -31,6 +38,61 @@ _start:
  	mov rax, 60
 	xor rdi, rdi
 	syscall
+
+
+
+process_matrix: ; this function will fill 'arr_pm' with structure 'ptr_min'
+	push rbp ; store basic pointer in stack
+	mov rbp, rsp ; save value of 'rsp' in base pointer not to lose 
+	sub rsp, 8 ; so now we allocated memory and saved address of 'rsp'
+
+	mov [rbp - 8], rcx ; to store rcx value in stack while processing
+ 	
+	xor rcx, rcx ; to escape rubbish in rcx
+	mov cl, raws ; = raws ; beacuse raws <= 255
+	dec cl ; to have 'raws' iterations of cycle but start from zero to easily process first raw
+
+	mov r8, 0 ; = index of raw => loop from zero	
+	
+	mov r9, matrix ; pointer to matrix
+	jmp .loop
+
+.loop:
+	cmp r8, rcx
+	jz .exit
+	
+	mov current_raw, r9 ; current_raw stores pointer to raw to be processed in 'min' function
+	mov [arr_pm + r8 * ptr_min_size + ptr_min.ptr], r9 ;
+	call min
+	add r9, raw_size
+	movsx r10, dword [min_el]
+	mov [arr_pm + r8 * ptr_min_size + ptr_min.min], r10 
+	
+	inc r8
+
+	jmp .loop
+.exit:
+	mov rcx, [rbp - 8] ; give back 'rcx' its value
+ 	
+	mov rsp, rbp
+	pop rbp
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 min: ; find minimal element in raw of 'cols' elements
 	push rbp ; implement base pointer
