@@ -28,7 +28,7 @@ ptr_min_size equ 12 ; in bytes
 arr_pm: times RAWS * ptr_min_size db 0 ; array consists of above defined structure
 
 matrix: dd 11, -1000, 99, -3221, 123, 55, 23, 1, 49 ; matrix ;)
-raw_size: dq COLS * 4
+raw_size equ COLS * 4
 
 global _start
 
@@ -36,7 +36,25 @@ section .text
 _start:
 	call process_matrix
 	
- 	mov rax, 60
+	movsx rax, dword [arr_pm + ptr_min.min]
+	mov rax, [arr_pm + ptr_min.ptr]
+	mov rbx, matrix
+	sub rax, rbx
+
+	movsx rax, dword [arr_pm + ptr_min_size + ptr_min.min]
+	mov rax, [arr_pm + ptr_min_size + ptr_min.ptr]
+	mov rbx, matrix
+	add rbx, raw_size
+	sub rax, rbx
+	
+	movsx rax, dword [arr_pm + ptr_min_size + ptr_min_size + ptr_min.min]
+	mov rax, [arr_pm + ptr_min_size + ptr_min_size + ptr_min.ptr]
+	mov rbx, matrix
+	add rbx, raw_size
+	add rbx, raw_size
+ 	sub rax, rbx
+	
+	mov rax, 60
 	xor rdi, rdi
 	syscall
 
@@ -45,10 +63,13 @@ _start:
 process_matrix: ; this function will fill 'arr_pm' with structure 'ptr_min'
 	push rbp ; store basic pointer in stack
 	mov rbp, rsp ; save value of 'rsp' in base pointer not to lose 
-	sub rsp, 16 ; so now we allocated memory and saved address of 'rsp'
+	sub rsp, 40 ; so now we allocated memory and saved address of 'rsp'
 
 	mov [rbp - 8], rcx ; to store rcx value in stack while processing
  	mov [rbp - 16], rax
+	mov [rbp - 24], r8
+	mov [rbp - 32], r9
+	mov [rbp - 40], r10
 
 	xor rcx, rcx ; to escape rubbish in rcx
 	xor rax, rax ; to escape rubbish in rax
@@ -73,7 +94,7 @@ process_matrix: ; this function will fill 'arr_pm' with structure 'ptr_min'
 	mov [arr_pm + rax + ptr_min.ptr], r9 ;
 	
 	call min
-	add r9, [raw_size]
+	add r9, raw_size
 
 	movsx r10, dword [min_el]
 	mov [arr_pm + rax + ptr_min.min], r10 
@@ -84,6 +105,9 @@ process_matrix: ; this function will fill 'arr_pm' with structure 'ptr_min'
 .exit:
 	mov rcx, [rbp - 8] ; give back 'rcx' its value
  	mov rax, [rbp - 16] ; give back 'rax' its value
+	mov r8,  [rbp - 24]
+	mov r9,  [rbp - 32]
+	mov r10, [rbp - 40]
 
 	mov rsp, rbp
 	pop rbp
