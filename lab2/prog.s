@@ -30,7 +30,7 @@ ptr_min_size equ 12 ; in bytes
 arr_pm: times RAWS * ptr_min_size db 0 ; array consists of above defined structure
 arr_pm_sorted: times RAWS * ptr_min_size db 0 ; sorted above array 
 
-matrix: dd 11111, 11, 99, -1213, -33221, 123, 55, -1, 23, 1, 49, -9119, 11, -11, -8841 ; matrix ;)
+matrix: dd -321, -3211, 11, -9783, 11, 11, -3821, 11, 11, 11, -2131, 11, 11, -991, 11 ; matrix ;)
 
 raw_size equ COLS * 4
 matrix_size equ COLS * RAWS
@@ -51,10 +51,45 @@ _start:
 
 	call see_arr_pm_sorted
 
+	call sort_matrix
+
+	call see_matrix
+
 	mov rax, 60
 	xor rdi, rdi
 	syscall
 
+
+see_matrix:
+	push rbp
+	mov rbp, rsp
+	sub rsp, 32
+
+	mov [rbp - 8], rax
+	mov [rbp - 16], rbx
+	mov [rbp - 24], rcx
+	mov [rbp - 32], rdx
+	
+	mov rax, 0
+	jmp .loop
+.loop:
+	cmp rax, matrix_size
+	jz .exit
+
+	movsx rbx, dword [matrix + 4 * rax]
+
+	inc rax
+	jmp .loop
+.exit:
+	mov rax, [rbp - 8]
+	mov rbx, [rbp - 16]
+	mov rcx, [rbp - 24]
+	mov rdx, [rbp - 32]
+
+	mov rsp, rbp
+	pop rbp
+
+	ret
 
 see_arr_pm:
 	push rbp
@@ -129,7 +164,83 @@ see_arr_pm_sorted:
 sort_matrix:
 	push rbp
 	mov rbp, rsp
-	sub 
+	sub rsp, 48
+
+	mov [rbp - 8], rax
+	mov [rbp - 16], rbx
+	mov [rbp - 24], rcx
+	mov [rbp - 32], rdx
+	mov [rbp - 40], r8
+	mov [rbp - 48], r9
+
+	mov rax, -1 ; rax = index of current raw represented in 'matrix' and in 'arr_pm_sorted'
+.loop:
+	inc rax
+	cmp rax, RAWS
+	jz .exit
+	
+	imul rbx, rax, ptr_min_size ; current offset for 'arr_pm_sorted' in bytes
+	mov rbx, qword [arr_pm_sorted + rbx + ptr_min.ptr] ; put ptr of 'arr_pm_sorted' into rbx to later compare it with current raw
+	
+	imul rcx, rax, raw_size ; current offset for current raw in bytes
+	add rcx, matrix ; rcx = matrix + offset for current raw. And we got address of current raw 
+
+	cmp rbx, rcx
+	jz .loop
+	
+	; start of a new cycle
+	mov rdx, 0 ; index of exchange 'raw_data' -- 'matrix 'rax' raw'
+.save_to_mem:
+	movsx r8, dword [rcx + 4 * rdx] ; r8 = i-element of current raw 
+	mov [raw_data + 4 * rdx], r8d ; save i-element of 'rax' raw to temporary raw
+	
+	inc rdx
+	cmp rdx, COLS
+	jnz .save_to_mem
+
+	; start of a new cycle
+	mov rdx, 0 ; index for exchange 'matrix 'rax' raw' and 'arr_pm_sorted 'rax' element'
+.save_to_matrix:
+	movsx r8, dword [rbx + 4 * rdx]
+	mov [rcx + 4 * rdx], r8d
+
+	inc rdx
+	cmp rdx, COLS
+	jnz .save_to_matrix
+	
+	; start of new cycle
+	mov rdx, rax ; beacuse previous raws have been already proccessed (including) current
+.find_address:
+	imul r9, rdx, ptr_min_size ; offset for current element of 'arr_pm_sorted'
+	mov r8, [arr_pm_sorted + r9 + ptr_min.ptr]
+	inc rdx
+	cmp r8, rcx ;
+	jnz .find_address
+
+	mov [arr_pm_sorted + r9 + ptr_min.ptr], rbx ; we change address
+	; start of new cycle
+	mov rdx, 0
+.from_mem_to_matrix:
+	movsx r8, dword [raw_data + 4 * rdx]
+	mov [rbx + 4 * rdx], r8d
+
+	inc rdx
+	cmp rdx, COLS
+	jnz .from_mem_to_matrix
+	; if we here we correctly modified part of matrix due to out sort 
+	jmp .loop
+.exit:
+	mov rax, [rbp - 8]
+	mov rbx, [rbp - 16]
+	mov rcx, [rbp - 24]
+	mov rdx, [rbp - 32]
+	mov r8, [rbp - 40]
+	mov r9, [rbp - 48]
+
+	mov rsp, rbp
+	pop rbp
+	
+	ret 
 
 sort_arr:
 	push rbp
