@@ -15,7 +15,6 @@ min_el: resd 1
 current_raw: resq 1
 
 
-
 section .data
 
 cur_idx: dw 0
@@ -23,13 +22,13 @@ cur_idx: dw 0
 struc ptr_min ; creating struture to simplify comprehension of following code	
 	.ptr: resq 1 ; in x86_64 address consists of 8 bytes
 	.min: resd 1 ; need to reserve 4 bytes for dword matrix element
-endstruc 
+endstruc
 
 ptr_min_size equ 12 ; in bytes
 
 arr_pm: times RAWS * ptr_min_size db 0 ; array consists of above defined structure
 
-matrix: dd 11, -1000, 99, -1213, -3221, 123, 55, -1, 23, 1, 49, -9999, 11, -11, -12, 12; matrix ;)
+matrix: dd 11, -999, 99, -1213, -32211, 123, 55, -1, 23, 1, 49, -9999, 11, -11, -4000, 12; matrix ;)
 raw_size equ COLS * 4
 matrix_size equ COLS * RAWS
 
@@ -57,10 +56,61 @@ _start:
 	add rbx, raw_size
  	sub rax, rbx
 	
+	mov word [cur_idx], 0
+	call heapify_min
+	
+	call see_arr_pm
+
+	movsx rax, dword [arr_pm + ptr_min.min]
+	mov rax, [arr_pm + ptr_min.ptr]
+	
+	movsx rax, dword [arr_pm + ptr_min_size + ptr_min.min]
+	mov rax, [arr_pm + ptr_min_size + ptr_min.ptr]
+
+	movsx rax, dword [arr_pm + ptr_min_size + ptr_min_size + ptr_min.min]
+	mov rax, [arr_pm + ptr_min_size + ptr_min_size + ptr_min.ptr]
+	
+	movsx rax, dword [arr_pm + ptr_min_size + ptr_min_size + ptr_min_size + ptr_min.min]
+	mov rax, [arr_pm + ptr_min_size + ptr_min_size + ptr_min_size + ptr_min.ptr]	
+
 	mov rax, 60
 	xor rdi, rdi
 	syscall
 
+
+see_arr_pm:
+	push rbp
+	mov rbp, rsp
+	sub rsp, 32
+
+	mov [rbp - 8], rax
+	mov [rbp - 16], rbx
+	mov [rbp - 24], rcx
+	mov [rbp - 32], rdx
+
+	mov rax, 0 ; rax = counter
+	jmp .loop
+.loop:
+	cmp rax, RAWS
+	jz .exit
+
+	imul rcx, rax, ptr_min_size ; rcx = current offset
+	movsx rdx, dword [arr_pm + rcx + ptr_min.min] ; rdx = min element of current structure
+	mov rdx, [arr_pm + rcx + ptr_min.ptr] ; rdx = pointer of current structure
+	
+	inc rax
+	jmp .loop
+
+.exit:
+	mov rax, [rbp - 8]
+	mov rbx, [rbp - 16]
+	mov rcx, [rbp - 24]
+	mov rdx, [rbp - 32]
+
+	mov rsp, rbp
+	pop rbp
+
+	ret
 
 
 process_matrix: ; this function will fill 'arr_pm' with structure 'ptr_min'
@@ -123,58 +173,116 @@ process_matrix: ; this function will fill 'arr_pm' with structure 'ptr_min'
 heapify_min: ; later I implement 'heapify_max'
 	push rbp
 	mov rbp, rsp
-	sub rsp, 40
+	sub rsp, 48
 	
-	mov [rbp + 8], r8 ; store r8 value in stack; r8 = current index (I)
-	mov [rbp + 16], r9 ; store r9 value in stack ; r9 = left child (2I + 1)
-	mov [rbp + 24], r10 ; store r10 value in stack ; r10 = right child (2I + 2)
-	mov [rbp + 32], rbx ; scale = ptr_min_size = 12 bytes
-	mov [rbp + 40], rdx ; used for calculations 
-	mov [rbp + 48], r11 ; used for calculation
-
+	mov [rbp - 8], r8 ; store r8 value in stack; r8 = current index (I)
+	mov [rbp - 16], r9 ; store r9 value in stack ; r9 = left child (2I + 1)
+	mov [rbp - 24], r10 ; store r10 value in stack ; r10 = right child (2I + 2)
+	mov [rbp - 32], rbx ; scale = ptr_min_size = 12 bytes
+	mov [rbp - 40], rdx ; used for calculations 
+	mov [rbp - 48], r11 ; used for calculation
+	
 	
 	xor r8, r8
 	xor r9, r9
 	xor r10, r10
+	xor rbx, rbx
+	xor rdx, rdx
+	xor r11, r11
 
 	jmp .loop
  .loop:
-	movsx r8, word [cur_idx] ; r8 = current_index
+	movzx r8, word [cur_idx] ; r8 = current_index
 	
 	imul r9, r8, 2 
 	add r9, 1 ; r9 = current_index * 2 + 1 (left child)
-	cmp r9, matrix_size
+	cmp r9, RAWS
 	jge .exit ; it means that current node (I) can't have children
 
-	imul r10, r8, 2
-	add r10, 2 ; r10 = current_index * 2 + 2 (right child)
-	cmp r10, matrix_size
-	jge .only_left
-
-	; mov r8, [arr_pm + ptr_min * ]
+	mov r10, r9
+	add r10, 1 ; r10 = current_index * 2 + 2 (right child)
+	cmp r10, RAWS
+	jge .left
 	
-.only_left:	
+	imul rdx, r9, ptr_min_size ; rdx = (2*I + 1) * 12 = offset for the left child
+	imul rbx, r10, ptr_min_size ; rbx = (2*I + 2) * 12 = offset for the right child
+	
+	movsx rdx, dword [arr_pm + rdx + ptr_min.min] ; r9 = min value of the left child
+	movsx rbx, dword [arr_pm + rbx + ptr_min.min] ; r10 = min value of the right child
+	cmp rdx, rbx
+	jg .right
+	jmp .left
+
+.right:
 	mov rbx, ptr_min_size ; rbx = 12
 	
 	imul r8, rbx ; r8 = I * 12 = offset for necessary structure
-	mov r8, [arr_pm + r8 + ptr_min.min]
+	movsx r8, dword [arr_pm + r8 + ptr_min.min]
 	
-	imul r9, rbx ; r9 = (I*2 + 1) * 12 = offset for necessary structure
-	mov r9, [arr_pm + r9 + ptr_min.min]
+	imul r10, rbx ; r10 = (I*2 + 2) * 12 = offset for necessary structure
+	movsx r10, dword [arr_pm + r10 + ptr_min.min]
 
-	cmp r9, r8
-	jge .exit ; if r9 (left child in MIN-heap) greater or equal r8 (current parent in MIN-heap) than we finished heapifing 
-	; if we here whan we need to swap child and parent
+	cmp r10, r8
+	jge .exit ; if r10 (right child in MIN-heap) greater or equal r8 (current parent in MIN-heap) than we finished heapifing 
+	; if we here than we need to swap child and parent
 
  	movzx r8, word [cur_idx] ; parent index
-	imul r8, rbx ; parent offset
+	imul r8, rbx ; parent offset = I * 12 = I * ptr_min_size
 	movsx r9, dword [arr_pm + r8 + ptr_min.min] ; r9 = min parent value
 	mov r10, [arr_pm + r8 + ptr_min.ptr] ; r10 = ptr parent value
 	
-	imul rbx, [cur_idx], 2 ; rbx = current_index * 2
+	movzx rbx, word [cur_idx] ; rbx = cur_idx
+	shl rbx, 1 ; rbx = cur_idx * 2
+	add rbx, 2 ; rbx = cur_idx * 2 + 2 
+	mov r11, ptr_min_size ; r11 = 12
+	imul rbx, r11 ; rbx = right child offset = (2 * I + 2) * 12 = (2 * I + 12 * ptr_min_size
+
+	movsx rdx, dword [arr_pm + rbx + ptr_min.min] ; rdx = min left child value
+	mov r11, [arr_pm + rbx + ptr_min.ptr] ; r11 = ptr left child value
+
+	mov [arr_pm + rbx + ptr_min.min], r9d ; = min parent value
+	mov [arr_pm + rbx + ptr_min.ptr], r10 ; = ptr parent value
+
+	mov [arr_pm + r8 + ptr_min.min], edx ; 
+	mov [arr_pm + r8 + ptr_min.ptr], r11 ;
+	
+	push rax
+	mov rax, [arr_pm + ptr_min.ptr]
+	pop rax
+
+	movzx r8, word [cur_idx]
+	imul r9, r8, 2 ; r9 = I * 2
+	add r9, 2 ; r9 = I * 2 + 2 = index of the right child
+	mov [cur_idx], r9w
+	jmp .loop
+
+.left:	
+	mov rbx, ptr_min_size ; rbx = 12
+	
+	imul r8, rbx ; r8 = I * 12 = offset for necessary structure
+	movsx r8, dword [arr_pm + r8 + ptr_min.min]
+	
+	imul r9, rbx ; r9 = (I*2 + 1) * 12 = offset for necessary structure
+	movsx r9, dword [arr_pm + r9 + ptr_min.min]
+
+	cmp r9, r8
+	jge .exit ; if r9 (left child in MIN-heap) greater or equal r8 (current parent in MIN-heap) than we finished heapifing 
+	; if we here than we need to swap child and parent
+
+ 	movzx r8, word [cur_idx] ; parent index
+	imul r8, rbx ; parent offset = I * 12 = I * ptr_min_size
+	movsx r9, dword [arr_pm + r8 + ptr_min.min] ; r9 = min parent value
+	mov r10, [arr_pm + r8 + ptr_min.ptr] ; r10 = ptr parent value
+
+	movzx rbx, word [cur_idx] ; rbx = cur_idx
+	shl rbx, 1 ; rbx = cur_idx * 2
 	add rbx, 1 ; rbx = current_index * 2 + 1
 	mov r11, ptr_min_size ; r11 = 12
-	imul rbx, r11 ; rbx = left child offset
+	imul rbx, r11 ; rbx = left child offset = (2 * I + 1) * 12 = (2 * I + 1) * ptr_min_size
+
+	push rax
+	mov rax, [arr_pm + ptr_min.ptr]
+	pop rax
 
 	movsx rdx, dword [arr_pm + rbx + ptr_min.min] ; rdx = min left child value
 	mov r11, [arr_pm + rbx + ptr_min.ptr] ; r11 = ptr left child value
@@ -185,10 +293,28 @@ heapify_min: ; later I implement 'heapify_max'
 	mov [arr_pm + r8 + ptr_min.min], edx ; 
 	mov [arr_pm + r8 + ptr_min.ptr], r11 ;
 
-	jmp .exit
+	push rax
+	mov rax, [arr_pm + ptr_min.ptr]
+	pop rax
+
+	movzx r8, word [cur_idx]
+	imul r9, r8, 2 ; r9 = I * 2
+	add r9, 1 ; r9 = I * 2 + 1 = index of the left child
+	mov [cur_idx], r9w
+	jmp .loop
 
 .exit:
+	mov r8,[rbp - 8] ; store r8 value in stack; r8 = current index (I)
+	mov r9, [rbp - 16] ; store r9 value in stack ; r9 = left child (2I + 1)
+	mov r10, [rbp - 24] ; store r10 value in stack ; r10 = right child (2I + 2)
+	mov rbx, [rbp - 32] ; scale = ptr_min_size = 12 bytes
+	mov rdx, [rbp - 40] ; used for calculations 
+	mov r11, [rbp - 48] ; used for calculation
 	
+	mov rsp, rbp
+	pop rbp
+
+	ret
 
 
 
