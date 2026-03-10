@@ -1,8 +1,8 @@
 bits 64
 ; matrix; heap sort; pointer array
 
-COLS equ 4
-RAWS equ 4
+COLS equ 3
+RAWS equ 5
 
 section .rodata
 raws: db RAWS
@@ -13,9 +13,10 @@ cols: db COLS
 section .bss
 min_el: resd 1
 current_raw: resq 1
-
+raw_data: resd COLS
 
 section .data
+raws_num: dw RAWS
 
 cur_idx: dw 0
 
@@ -27,8 +28,10 @@ endstruc
 ptr_min_size equ 12 ; in bytes
 
 arr_pm: times RAWS * ptr_min_size db 0 ; array consists of above defined structure
+arr_pm_sorted: times RAWS * ptr_min_size db 0 ; sorted above array 
 
-matrix: dd 11, -999, 99, -1213, -32211, 123, 55, -1, 23, 1, 49, -9999, 11, -11, -4000, 12; matrix ;)
+matrix: dd 11111, 11, 99, -1213, -33221, 123, 55, -1, 23, 1, 49, -9119, 11, -11, -8841 ; matrix ;)
+
 raw_size equ COLS * 4
 matrix_size equ COLS * RAWS
 
@@ -38,40 +41,15 @@ section .text
 _start:
 	call process_matrix
 	
-	movsx rax, dword [arr_pm + ptr_min.min]
-	mov rax, [arr_pm + ptr_min.ptr]
-	mov rbx, matrix
-	sub rax, rbx
-
-	movsx rax, dword [arr_pm + ptr_min_size + ptr_min.min]
-	mov rax, [arr_pm + ptr_min_size + ptr_min.ptr]
-	mov rbx, matrix
-	add rbx, raw_size
-	sub rax, rbx
+	call see_arr_pm
 	
-	movsx rax, dword [arr_pm + ptr_min_size + ptr_min_size + ptr_min.min]
-	mov rax, [arr_pm + ptr_min_size + ptr_min_size + ptr_min.ptr]
-	mov rbx, matrix
-	add rbx, raw_size
-	add rbx, raw_size
- 	sub rax, rbx
-	
-	mov word [cur_idx], 0
-	call heapify_min
+	call heapify_arr
 	
 	call see_arr_pm
-
-	movsx rax, dword [arr_pm + ptr_min.min]
-	mov rax, [arr_pm + ptr_min.ptr]
 	
-	movsx rax, dword [arr_pm + ptr_min_size + ptr_min.min]
-	mov rax, [arr_pm + ptr_min_size + ptr_min.ptr]
+	call sort_arr
 
-	movsx rax, dword [arr_pm + ptr_min_size + ptr_min_size + ptr_min.min]
-	mov rax, [arr_pm + ptr_min_size + ptr_min_size + ptr_min.ptr]
-	
-	movsx rax, dword [arr_pm + ptr_min_size + ptr_min_size + ptr_min_size + ptr_min.min]
-	mov rax, [arr_pm + ptr_min_size + ptr_min_size + ptr_min_size + ptr_min.ptr]	
+	call see_arr_pm_sorted
 
 	mov rax, 60
 	xor rdi, rdi
@@ -112,6 +90,127 @@ see_arr_pm:
 
 	ret
 
+
+see_arr_pm_sorted:
+	push rbp
+	mov rbp, rsp
+	sub rsp, 32
+
+	mov [rbp - 8], rax
+	mov [rbp - 16], rbx
+	mov [rbp - 24], rcx
+	mov [rbp - 32], rdx
+
+	mov rax, 0 ; rax = counter
+	jmp .loop
+.loop:
+	cmp rax, RAWS
+	jz .exit
+
+	imul rcx, rax, ptr_min_size ; rcx = current offset
+	movsx rdx, dword [arr_pm_sorted + rcx + ptr_min.min] ; rdx = min element of current structure
+	mov rdx, [arr_pm_sorted + rcx + ptr_min.ptr] ; rdx = pointer of current structure
+	
+	inc rax
+	jmp .loop
+
+.exit:
+	mov rax, [rbp - 8]
+	mov rbx, [rbp - 16]
+	mov rcx, [rbp - 24]
+	mov rdx, [rbp - 32]
+
+	mov rsp, rbp
+	pop rbp
+
+	ret
+
+
+sort_matrix:
+	push rbp
+	mov rbp, rsp
+	sub 
+
+sort_arr:
+	push rbp
+	mov rbp, rsp
+	sub rsp, 32 ; enter 32
+	
+	mov [rbp - 8], rax
+	mov [rbp - 16], rbx
+	mov [rbp - 24], rcx
+	mov [rbp - 32], rdx
+	
+	mov rax, 0 ; rax = index in arr_pm_sorted
+.loop:
+	cmp rax, RAWS
+	jz .exit
+	
+	imul rbx, rax, ptr_min_size ; offset in 'arr_pm_sorted' array
+	movsx rcx, dword [arr_pm + ptr_min.min] ; rcx = current corner of heap 'arr_pm'
+	mov rdx, [arr_pm + ptr_min.ptr] ; rdx = current pointer of corner of heap 'arr_pm'
+	
+	mov [arr_pm_sorted + rbx + ptr_min.min], ecx
+	mov [arr_pm_sorted + rbx + ptr_min.ptr], rdx
+	
+	dec word [raws_num] ; so now -> raws_num is index of the last element of heap
+	movzx rbx, word [raws_num] ; rbx = raws_num
+	imul rbx, rbx, ptr_min_size ; rbx = offset of 'arr_pm' heap for last index
+
+	movsx rcx, dword [arr_pm + rbx + ptr_min.min] ; rcx = min value of the last element of 'heap'
+	mov rdx, [arr_pm + rbx + ptr_min.ptr] ; rdx = pointer of the last element of 'heap'
+
+	mov [arr_pm + ptr_min.min], ecx
+	mov [arr_pm + ptr_min.ptr], rdx ; so now we swaped first and last elements of 'heap' and decreased heap's size by 1
+	
+	mov word [cur_idx], 0
+	call heapify_min
+
+	inc rax
+	jmp .loop
+.exit:
+	mov rax, [rbp - 8]
+	mov rbx, [rbp - 16]
+	mov rcx, [rbp - 24]
+	mov rdx, [rbp - 32]
+	
+	mov rsp, rbp
+	pop rbp
+
+	ret
+
+
+heapify_arr:
+	push rbp
+	mov rbp, rsp
+	sub rsp, 8
+
+	mov [rbp - 8], rax
+	; mov rbx, [rbp - 16]
+	; mov rcx, [rbp - 24]
+	; mov rdx, [rbp - 32]
+	
+	xor rax, rax
+	mov rax, RAWS ; rax = RAWS
+	dec rax ; rax = RAWS - 1
+	
+	jmp .loop	
+.loop:
+	cmp rax, -1
+	jz .exit
+	mov word [cur_idx], ax
+	call heapify_min
+
+	dec rax
+
+	jmp .loop
+.exit:
+	mov rax, [rbp - 8]
+	mov rsp, rbp 
+
+	pop rbp
+
+	ret
 
 process_matrix: ; this function will fill 'arr_pm' with structure 'ptr_min'
 	push rbp ; store basic pointer in stack
@@ -196,12 +295,14 @@ heapify_min: ; later I implement 'heapify_max'
 	
 	imul r9, r8, 2 
 	add r9, 1 ; r9 = current_index * 2 + 1 (left child)
-	cmp r9, RAWS
+	
+	movzx r11, word [raws_num] ;
+	cmp r9, r11 ; 
 	jge .exit ; it means that current node (I) can't have children
 
 	mov r10, r9
 	add r10, 1 ; r10 = current_index * 2 + 2 (right child)
-	cmp r10, RAWS
+	cmp r10, r11 ; 
 	jge .left
 	
 	imul rdx, r9, ptr_min_size ; rdx = (2*I + 1) * 12 = offset for the left child
