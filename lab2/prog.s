@@ -1,7 +1,7 @@
 bits 64
 ; matrix; heap sort; pointer array
 
-COLS equ 3
+COLS equ 6
 RAWS equ 5
 
 section .rodata
@@ -14,6 +14,7 @@ section .bss
 min_el: resd 1
 current_raw: resq 1
 raw_data: resd COLS
+mode: resb 1 ; ASC/DESC
 
 section .data
 raws_num: dw RAWS
@@ -30,7 +31,11 @@ ptr_min_size equ 12 ; in bytes
 arr_pm: times RAWS * ptr_min_size db 0 ; array consists of above defined structure
 arr_pm_sorted: times RAWS * ptr_min_size db 0 ; sorted above array 
 
-matrix: dd -321, -3211, 11, -9783, 11, 11, -3821, 11, 11, 11, -2131, 11, 11, -991, 11 ; matrix ;)
+matrix: dd -321, -3211, 11, -978, 717, -122
+	dd 1, -13211, -3821, 11, 32, 123
+	dd 9, -99, -2131, 11, 321, 111
+	dd 18, -991, 11, -10459, 32, -99
+	dd -32, 18, 999999, 0, -99, 12345 ; matrix ;)
 
 raw_size equ COLS * 4
 matrix_size equ COLS * RAWS
@@ -39,6 +44,13 @@ global _start
 
 section .text
 _start:
+	pop rcx
+	pop rsi
+	pop rsi ; first argument
+	call set_mode
+	cmp byte[mode], 2
+	jz .exit ; it means that argument is invalid
+	
 	call process_matrix
 	
 	call see_arr_pm
@@ -55,9 +67,29 @@ _start:
 
 	call see_matrix
 
+.exit:
 	mov rax, 60
 	xor rdi, rdi
 	syscall
+
+set_mode:
+	mov al, [rsi]
+	cmp al, 'A'
+	je .set_asc
+
+	cmp al, 'D'
+	je .set_desc
+
+	mov byte [mode], 2 ; invalid argument
+	ret
+
+.set_asc:
+	mov byte [mode], 1 ; ASC sort
+	ret
+
+.set_desc:
+	mov byte [mode], 0 ; DESC sort
+	ret
 
 
 see_matrix:
@@ -275,10 +307,20 @@ sort_arr:
 	mov [arr_pm + ptr_min.ptr], rdx ; so now we swaped first and last elements of 'heap' and decreased heap's size by 1
 	
 	mov word [cur_idx], 0
+	
+	cmp byte [mode], 0
+	je .heapify_max
 	call heapify_min
 
 	inc rax
 	jmp .loop
+
+.heapify_max:
+	call heapify_max
+
+	inc rax
+	jmp .loop
+
 .exit:
 	mov rax, [rbp - 8]
 	mov rbx, [rbp - 16]
@@ -310,10 +352,17 @@ heapify_arr:
 	cmp rax, -1
 	jz .exit
 	mov word [cur_idx], ax
+	
+	cmp byte [mode], 0
+	je .heapify_max
 	call heapify_min
 
 	dec rax
+	jmp .loop
+.heapify_max:
+	call heapify_max
 
+	dec rax
 	jmp .loop
 .exit:
 	mov rax, [rbp - 8]
@@ -530,6 +579,152 @@ heapify_min: ; later I implement 'heapify_max'
 
 
 
+heapify_max: ; later I implement 'heapify_max'
+	push rbp
+	mov rbp, rsp
+	sub rsp, 48
+	
+	mov [rbp - 8], r8 ; store r8 value in stack; r8 = current index (I)
+	mov [rbp - 16], r9 ; store r9 value in stack ; r9 = left child (2I + 1)
+	mov [rbp - 24], r10 ; store r10 value in stack ; r10 = right child (2I + 2)
+	mov [rbp - 32], rbx ; scale = ptr_min_size = 12 bytes
+	mov [rbp - 40], rdx ; used for calculations 
+	mov [rbp - 48], r11 ; used for calculation
+	
+	
+	xor r8, r8
+	xor r9, r9
+	xor r10, r10
+	xor rbx, rbx
+	xor rdx, rdx
+	xor r11, r11
+
+	jmp .loop
+ .loop:
+	movzx r8, word [cur_idx] ; r8 = current_index
+	
+	imul r9, r8, 2 
+	add r9, 1 ; r9 = current_index * 2 + 1 (left child)
+	
+	movzx r11, word [raws_num] ;
+	cmp r9, r11 ; 
+	jge .exit ; it means that current node (I) can't have children
+
+	mov r10, r9
+	add r10, 1 ; r10 = current_index * 2 + 2 (right child)
+	cmp r10, r11 ; 
+	jge .left
+	
+	imul rdx, r9, ptr_min_size ; rdx = (2*I + 1) * 12 = offset for the left child
+	imul rbx, r10, ptr_min_size ; rbx = (2*I + 2) * 12 = offset for the right child
+	
+	movsx rdx, dword [arr_pm + rdx + ptr_min.min] ; r9 = min value of the left child
+	movsx rbx, dword [arr_pm + rbx + ptr_min.min] ; r10 = min value of the right child
+	cmp rdx, rbx
+	jl .right
+	jmp .left
+
+.right:
+	mov rbx, ptr_min_size ; rbx = 12
+	
+	imul r8, rbx ; r8 = I * 12 = offset for necessary structure
+	movsx r8, dword [arr_pm + r8 + ptr_min.min]
+	
+	imul r10, rbx ; r10 = (I*2 + 2) * 12 = offset for necessary structure
+	movsx r10, dword [arr_pm + r10 + ptr_min.min]
+
+	cmp r10, r8
+	jle .exit ; if r10 (right child in MAX-heap) lower or equal r8 (current parent in MAX-heap) than we finished heapifing 
+	; if we here than we need to swap child and parent
+
+ 	movzx r8, word [cur_idx] ; parent index
+	imul r8, rbx ; parent offset = I * 12 = I * ptr_min_size
+	movsx r9, dword [arr_pm + r8 + ptr_min.min] ; r9 = min parent value
+	mov r10, [arr_pm + r8 + ptr_min.ptr] ; r10 = ptr parent value
+	
+	movzx rbx, word [cur_idx] ; rbx = cur_idx
+	shl rbx, 1 ; rbx = cur_idx * 2
+	add rbx, 2 ; rbx = cur_idx * 2 + 2 
+	mov r11, ptr_min_size ; r11 = 12
+	imul rbx, r11 ; rbx = right child offset = (2 * I + 2) * 12 = (2 * I + 12 * ptr_min_size
+
+	movsx rdx, dword [arr_pm + rbx + ptr_min.min] ; rdx = min left child value
+	mov r11, [arr_pm + rbx + ptr_min.ptr] ; r11 = ptr left child value
+
+	mov [arr_pm + rbx + ptr_min.min], r9d ; = min parent value
+	mov [arr_pm + rbx + ptr_min.ptr], r10 ; = ptr parent value
+
+	mov [arr_pm + r8 + ptr_min.min], edx ; 
+	mov [arr_pm + r8 + ptr_min.ptr], r11 ;
+	
+	push rax
+	mov rax, [arr_pm + ptr_min.ptr]
+	pop rax
+
+	movzx r8, word [cur_idx]
+	imul r9, r8, 2 ; r9 = I * 2
+	add r9, 2 ; r9 = I * 2 + 2 = index of the right child
+	mov [cur_idx], r9w
+	jmp .loop
+
+.left:	
+	mov rbx, ptr_min_size ; rbx = 12
+	
+	imul r8, rbx ; r8 = I * 12 = offset for necessary structure
+	movsx r8, dword [arr_pm + r8 + ptr_min.min]
+	
+	imul r9, rbx ; r9 = (I*2 + 1) * 12 = offset for necessary structure
+	movsx r9, dword [arr_pm + r9 + ptr_min.min]
+
+	cmp r9, r8
+	jle .exit ; if r9 (left child in MAX-heap) lower or equal r8 (current parent in MAX-heap) than we finished heapifing 
+	; if we here than we need to swap child and parent
+
+ 	movzx r8, word [cur_idx] ; parent index
+	imul r8, rbx ; parent offset = I * 12 = I * ptr_min_size
+	movsx r9, dword [arr_pm + r8 + ptr_min.min] ; r9 = min parent value
+	mov r10, [arr_pm + r8 + ptr_min.ptr] ; r10 = ptr parent value
+
+	movzx rbx, word [cur_idx] ; rbx = cur_idx
+	shl rbx, 1 ; rbx = cur_idx * 2
+	add rbx, 1 ; rbx = current_index * 2 + 1
+	mov r11, ptr_min_size ; r11 = 12
+	imul rbx, r11 ; rbx = left child offset = (2 * I + 1) * 12 = (2 * I + 1) * ptr_min_size
+
+	push rax
+	mov rax, [arr_pm + ptr_min.ptr]
+	pop rax
+
+	movsx rdx, dword [arr_pm + rbx + ptr_min.min] ; rdx = min left child value
+	mov r11, [arr_pm + rbx + ptr_min.ptr] ; r11 = ptr left child value
+
+	mov [arr_pm + rbx + ptr_min.min], r9d ; = min parent value
+	mov [arr_pm + rbx + ptr_min.ptr], r10 ; = ptr parent value
+
+	mov [arr_pm + r8 + ptr_min.min], edx ; 
+	mov [arr_pm + r8 + ptr_min.ptr], r11 ;
+
+	push rax
+	mov rax, [arr_pm + ptr_min.ptr]
+	pop rax
+
+	movzx r8, word [cur_idx]
+	imul r9, r8, 2 ; r9 = I * 2
+	add r9, 1 ; r9 = I * 2 + 1 = index of the left child
+	mov [cur_idx], r9w
+	jmp .loop
+.exit:
+	mov r8,[rbp - 8] ; store r8 value in stack; r8 = current index (I)
+	mov r9, [rbp - 16] ; store r9 value in stack ; r9 = left child (2I + 1)
+	mov r10, [rbp - 24] ; store r10 value in stack ; r10 = right child (2I + 2)
+	mov rbx, [rbp - 32] ; scale = ptr_min_size = 12 bytes
+	mov rdx, [rbp - 40] ; used for calculations 
+	mov r11, [rbp - 48] ; used for calculation
+	
+	mov rsp, rbp
+	pop rbp
+
+	ret
 
 
 
