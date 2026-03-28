@@ -1,14 +1,27 @@
 bits 64
 
 section .bss
-word_length: resq 1 ; to store word length
-filename: resq 1 ; to store pointer to filenaeme (it is convinient)
+fword_len: resq 1 ; to store first word of the string length
+word_len: resq 1; to store other word length
+
+filename: resq 1 ; to store pointer to filename (it is convinient)
 
 
-current_string: res_q 1 ; to mark current string
+current_string: resq 1 ; to mark current string
+
 file_desc: resq 1 ; file descriptor (узнать о нём побольше)
 buffer_in: resb 4096 ; where we temporary store the chunk of file
 buffer_out: resb 4096 ; where we collect data to be send to stdout
+
+flag_fw: resb ; to know if the current processing word is first or not : 0 - first, else – no
+
+st_word: resw 1 ; to have offest for first letter of the current word
+idx_in: resw 1 ; to store current position in buffer_in
+idx_out: resw 1 ; to store current position in buffer_out
+
+
+
+
 section .data
 error_no_file: db "Error: file name not found", 10
 error_no_file_len: equ $ - error_no_file
@@ -56,8 +69,8 @@ _start:
 
 .read_file_chunk: ; loop
 	mov rax, 0 ; sys_read
-	mov rdi, [file_desc] ;
-	mov rsi, buffer ; buffer for reading (place where we temporary store current data/chunk)
+	mov rdi, [file_desc] ; load descriptor to rdi
+	mov rsi, buffer_in ; buffer for reading (place where we temporary store current data/chunk)
 	mov rdx, 4096 ; maximum value of one read chunk
 	syscall
 	
@@ -66,13 +79,41 @@ _start:
 	jl error_read 
 	; else we have somthing in 'buffer' ===> processing
 
-	mov [current_string], buffer
-.process_strings:
-		
-	xor rcx, rcx ; rcx = counter of word length
-.get_first_length: ; define length of the first word
-	cmp 	
+	mov r8, -1 ; idx in buffer_in
+.process_special:
+	inc r8
+	cmp r8, 4096
+	; je refresh_file_desc ну или типа того пока что
+
+	; добавить проверку на получение нуль-терминатораш
+
+	mov [idx_in], r8w
+
+	mov r9b, [buffer_in + r8 * 1] ; 
+	cmp r9b, 32 ; we got ' ' => process next symbol
+	je .process_special
+	cmp r9b, 9 ; we got '\t' => process next symbol
+	je .process_special
+	cmp r9b, 10 ; we got '\n'/Line feed =>
+	je insert_lf ; in 'buffer_out;	
 	
+	mov r10, r8 ; to do subtraction (r8 - r10) afret the cycle 
+.get_word_length: ; define length of the first word	
+	; if we are here, then we need to start defining length of the next word
+	inc r8 ; take next index
+	cmp r8, 4096 ; then we have reached the end of the 'buffer_in' and need to move 'file descriptor'
+	; je refresh_file_desc ну или типа того пока что
+
+	mov [idx_in], r8w
+
+	mov r9b, [buffer + r8 * 1] ; got symbol of the next symbol
+	cmp r9b, 32 ; 
+	je process_word
+	cmp r9b, 9
+	je process_word
+	cmp r9b, 10
+	je process word
+	jmp .get_word_length
 	
 
 .process_string:
@@ -128,3 +169,17 @@ success_end:
 	syscall
 
 	jmp _start.exit
+
+insert_lf: ; insert Line Feed
+	push r8
+
+	mov r8, [idx_out]
+	mov [buffer_out + r8 * 1], 10
+	inc r8
+	mov [idx_out], r8b
+	mov byte [flag_fw], 0 ; so we got ending of the line and next word is first
+	
+	pop r8
+	jmp _start.process_special
+
+
