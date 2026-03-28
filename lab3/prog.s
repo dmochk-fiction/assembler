@@ -7,13 +7,11 @@ word_len: resq 1; to store other word length
 filename: resq 1 ; to store pointer to filename (it is convinient)
 
 
-current_string: resq 1 ; to mark current string
-
 file_desc: resq 1 ; file descriptor (узнать о нём побольше)
 buffer_in: resb 4096 ; where we temporary store the chunk of file
 buffer_out: resb 4096 ; where we collect data to be send to stdout
 
-flag_fw: resb ; to know if the current processing word is first or not : 0 - first, else – no
+flag_fw: resb 1; to know if the current processing word is first or not : 0 - first, else – no
 
 st_word: resw 1 ; to have offest for first letter of the current word
 idx_in: resw 1 ; to store current position in buffer_in
@@ -82,14 +80,15 @@ _start:
 	mov r8, -1 ; idx in buffer_in
 .process_special:
 	inc r8
-	cmp r8, 4096
-	; je refresh_file_desc ну или типа того пока что
-
-	; добавить проверку на получение нуль-терминатораш
-
 	mov [idx_in], r8w
 
+	cmp r8, 4096
+	; je refresh_file_desc ну или типа того пока что
+	; добавить проверку на получение нуль-терминатораш
+
 	mov r9b, [buffer_in + r8 * 1] ; 
+	cmp r9b, 0
+	je .read_file_chunk ; to eventually come to 'rax = 0' and success_end mark
 	cmp r9b, 32 ; we got ' ' => process next symbol
 	je .process_special
 	cmp r9b, 9 ; we got '\t' => process next symbol
@@ -101,18 +100,21 @@ _start:
 .get_word_length: ; define length of the first word	
 	; if we are here, then we need to start defining length of the next word
 	inc r8 ; take next index
+	mov [idx_in], r8w
+
 	cmp r8, 4096 ; then we have reached the end of the 'buffer_in' and need to move 'file descriptor'
 	; je refresh_file_desc ну или типа того пока что
 
-	mov [idx_in], r8w
 
-	mov r9b, [buffer + r8 * 1] ; got symbol of the next symbol
+	mov r9b, [buffer_in + r8 * 1] ; got symbol of the next symbol
+	cmp r9b, 0
+	je process_word ; to eventually come to 'rax = 0' and success_end mark
 	cmp r9b, 32 ; 
 	je process_word
 	cmp r9b, 9
 	je process_word
 	cmp r9b, 10
-	je process word
+	je process_word
 	jmp .get_word_length
 	
 
@@ -173,13 +175,65 @@ success_end:
 insert_lf: ; insert Line Feed
 	push r8
 
-	mov r8, [idx_out]
-	mov [buffer_out + r8 * 1], 10
+	movzx r8, word [idx_out]
+	mov byte [buffer_out + r8 * 1], 10
 	inc r8
-	mov [idx_out], r8b
+	mov [idx_out], r8w
 	mov byte [flag_fw], 0 ; so we got ending of the line and next word is first
 	
 	pop r8
 	jmp _start.process_special
+
+process_word:
+	mov word [st_word], r10w
+	sub r10, r8 ; r10 = -word_length
+	neg r10 ; r10 = word_length < WORD
+	
+	dec r8 ; to process character immediatly after the world, else we ignore this probably important character
+	
+	cmp byte [flag_fw], 1
+	je cmp_len ; then we compare lengths and decide to add the word to string or not
+	; if we are here then, we need assign [fword_len] current word length and copy it to buffer_out
+	mov [fword_len], r10w
+	call copy_word
+	mov byte [flag_fw], 1
+
+	jmp _start.process_special
+
+cmp_len:
+	movzx r11, word [fword_len] ; r11w = length of the first symbol of the string
+	cmp r10, r11
+	jne _start.process_special
+	call copy_word
+	jmp _start.process_special
+
+copy_word:
+	cmp byte [flag_fw], 0
+	je skip
+	movzx rbx, word [idx_out]
+	mov byte [buffer_out + rbx], 32 ; arrange ' ' character before every copy
+	add word [idx_out], 1 ;
+skip:
+	movzx rbx, word [st_word]
+	mov rsi, buffer_in ; rsi = buffer_in
+	add rsi, rbx ; rsi = buffer_in + [st_word] => rsi is pointer ot first symbol of the current word
+
+	movzx rbx, word [idx_out]
+	mov rdi, buffer_out ; rsi = buffer_out
+	add rdi, rbx ; rdi = buffer_out + [idx_out] => rsi is a pointer to first free byte in buffer_out
+
+	mov rcx, [fword_len] ; counter
+	rep movsb
+	
+	mov r11w, [idx_out]
+	add r11w, word [fword_len]
+	mov [idx_out], r11w
+
+	ret
+
+
+
+
+
 
 
