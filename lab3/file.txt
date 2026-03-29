@@ -1,8 +1,200 @@
-Предисловие: Наконец появилась возможность добраться до интернета, сейчас мы находимся в Панамском канале и здесь есть wifi. Я на судне уже больше месяца и пока я здесь, я писал все интересное что здесь происходит и вот наконец есть возможность этим поделиться. Фотографий пока не будет, их я выложу или позже, или уже когда вернусь домой. Итак, понеслась:
+﻿The Project Gutenberg eBook of The Epidemics of the Middle Ages
+    
+This eBook is for the use of anyone anywhere in the United States and
+most other parts of the world at no cost and with almost no restrictions
+whatsoever. You may copy it, give it away or re-use it under the terms
+of the Project Gutenberg License included with this eBook or online
+at www.gutenberg.org. If you are not located in the United States,
+you will have to check the laws of the country where you are located
+before using this eBook.
+
+Title: The Epidemics of the Middle Ages
+
+Author: J. F. C. Hecker
+        John Caius
+
+Translator: B. G. Babington
 
 
-Первые впечатления
+        
+Release date: September 19, 2020 [eBook #63232]
 
-Переночевав в гостинице в Гуаякиле, мы сели к агенту в машину и поехали на судно в Пуэрто Боливар. Доехали вопреки ожиданиям быстро, примерно за 3-4 часа. Погода была пасмурная и даже не смотря на то, что мы находимся недалеко от экватора, было прохладно. Почти все время, пока мы ехали, по обе стороны дороги были банановые плантации, но все равно в голове не укладывается: эти бананы грузят на суда в нескольких портах Эквадора десятками тысяч тонн каждый день, круглый год. Это ж несчастные бананы должны расти быстрее чем грибы.
+Language: English
 
-Дороги.
+Other information and formats: www.gutenberg.org/ebooks/63232
+
+Credits: Produced by Turgut Dincer, Robert Tonsing, Linda Cantoni
+        and the Online Distributed Proofreading Team at
+        https://www.pgdp.net (This file was produced from images
+        generously made available by The Internet Archive)
+
+
+*** START OF THE PROJECT GUTENBERG EBOOK THE EPIDEMICS OF THE MIDDLE AGES ***
+
+
+
+
+Produced by Turgut Dincer, Robert Tonsing, Linda Cantoni
+and the Online Distributed Proofreading Team at
+https://www.pgdp.net (This file was produced from images
+generously made available by The Internet Archive)
+
+
+
+
+
+
+
+
+
+                                  THE
+                               EPIDEMICS
+                                  OF
+                           THE MIDDLE AGES.
+
+
+                          FROM THE GERMAN OF
+                         J. F. C. HECKER, M.D.
+
+        PROFESSOR AT FREDERICK WILLIAM’S UNIVERSITY AT BERLIN,
+              AND MEMBER OF VARIOUS LEARNED SOCIETIES IN
+  ALBANY, BERLIN, BONN, COPENHAGEN, DIJON, DRESDEN, ERLANGEN, HANAU,
+     HEIDELBERG, LEIPZIG, LONDON, LYONS, MARSEILLES, METZ, NAPLES,
+             NEW YORK, OFFENBURG, PHILADELPHIA, STOCKHOLM,
+                     TOULOUSE, WARSAW AND ZURICH.
+
+
+                             TRANSLATED BY
+                     B. G. BABINGTON, M.D. F.R.S.,
+                                 ETC.
+
+                                LONDON
+                               MDCCCXLIV
+
+                                LONDON:
+                       GEORGE WOODFALL AND SON,
+                      ANGEL COURT, SKINNER STREET
+
+
+
+
+                           GENERAL PREFACE.
+
+
+The Council of the SYDENHAM SOCIETY having deemed Hecker’s three
+treatises on different Epidemics occurring in the Middle Ages worthy
+of being collected into a volume, and laid before its members in an
+English dress, I have felt much pleasure in presenting them with the
+copyright of the Black Death; in negociating for them, the purchase
+of that of the Dancing Mania, whereof I could resign only my share of
+a joint interest; and, in preparing for the press these productions,
+together with a translation, now for the first time made public, of the
+Sweating Sickness. This last work, from its greater length, and from
+the immediate relation of its chief subject to our own country, may be
+considered the most interesting and important of the series.
+
+Professor Hecker is generally acknowledged to be the most learned
+medical historian, and one of the most able medical writers in Germany.
+His numerous works suffice to show not only with what zeal he has
+laboured, but also how highly his labours have been appreciated by his
+countrymen; and when I state that, with one trifling exception, they
+have all been translated into other languages, I furnish a fair proof
+of the estimation in which they are held in foreign countries; and,
+so far at least as regards the originals, a full justification of the
+Council of the Sydenham Society in their choice on the present occasion.
+
+The “Schwarze Tod,” or “Black Death,” was published in 1832; and I
+was prompted to undertake its translation, from a belief that it
+would prove interesting at a moment when another fearful epidemic, the
+Cholera, with which it admitted of comparison in several particulars,
+was fresh in the memory of men. The “Tanzwuth,” or “Dancing Mania,”
+came out shortly afterwards; and, as it appeared to me that, though
+relating to a less terrific visitation, it possessed an equal share of
+interest, and, holding a kind of middle place between a physical and a
+moral pestilence, furnished subject of contemplation for the general
+as well as the professional reader, I determined on adding it also to
+our common stock of medical literature. When the “Englische Schweiss,”
+or “Sweating Sickness,” which contained much collateral matter little
+known in England, and which completed the history of the principal
+epidemics of the middle ages, appeared in 1834, I proceeded to finish
+my task; but failing in the accomplishment of certain arrangements
+connected with its publication, I laid aside my translation for the
+time under a hope, which has at length been fulfilled, that at some
+future more auspicious moment, it might yet see the light.
+
+It must not be supposed that the author, in thus taking up the history
+of three of the most important epidemics of the middle ages, although
+he has illustrated them by less detailed notices of several others,
+considers that he has exhausted his subject; on the contrary, it is his
+belief, that, in order to come at the secret springs of these general
+morbific influences, a most minute as well as a most extended survey
+of them, such as can be made only by the united efforts of many, is
+required. He would seem to aim at collecting together such a number of
+facts from the medical history of all countries and of all ages, as may
+at length enable us to deal with epidemics in the same way as Louis has
+dealt with individual diseases; and thus by a numerical arrangement of
+data, together with a just consideration of their relative value, to
+arrive at the discovery of general laws. The present work, therefore,
+is but one stone of an edifice, for the construction of which he
+invites medical men in all parts of the world to furnish materials[1].
+
+Whether the information which could be collected even by the most
+diligent and extensive research would prove sufficiently copious and
+accurate to enable us to pursue this method with complete success,
+may be a matter of doubt; but it is at least probable, that many
+valuable facts, now buried in oblivion, would thus be brought to
+light; and the incidental results, as often occurs in the pursuit of
+science, might prove as serviceable as those which were the direct
+object of discovery. Of what immense importance, for instance, in the
+fourteenth century, would a general knowledge have been of the simple
+but universal circumstance, that in all severe epidemics, from the
+time of Thucydides[2] to the present day, a false suspicion has been
+entertained by the vulgar, that the springs or provisions have been
+poisoned, or the air infected by some supposed enemies to the common
+weal. How many thousands of innocent lives would thus have been spared,
+which were barbarously sacrificed under this absurd notion?
+
+Whether Hecker’s call for aid in his undertaking has, in any instance,
+been answered by the physicians of Germany, I know not; but he will
+be as much pleased to learn, as I am to inform him, that it was
+the perusal of the “Black Death” which suggested to Dr. Simpson of
+Edinburgh the idea of collecting materials for a history of the
+Leprosy, as it existed in Great Britain during the middle ages; and
+that this author’s very learned and interesting antiquarian researches
+on that subject, as published in the Edinburgh Medical and Surgical
+Journal, have been the valuable, and, I trust, will not prove the
+solitary result.
+
+As the three treatises, now comprised for the first time under the
+title of “The Epidemics of the Middle Ages,” came out at different
+periods, I have thought it best to prefix to each the original preface
+of the author; and to the two which have already been published in
+English, that of the translator also; while Hecker’s Address to the
+Physicians of Germany, although written before the publication of the
+“Englische Schweiss,” forms an appropriate substitute for an author’s
+general preface to the whole volume.
+
+At the end of the “Black Death,” I had originally given, as No. III.
+of the Appendix, some copious extracts from Caius’ “Boke or Counseill
+against the Disease commonly called the Sweate or Sweatyng Sicknesse;”
+but this little treatise is so characteristic of the times in which
+it was written, so curious, so short, and so very scarce[3], that I
+have thought it worth while, with the permission of the council of our
+Society, to reprint it entire, and to add it in its more appropriate
+place, as an Appendix to the Sweating Sickness.
+
+
+
+
+                                ADDRESS
+                                TO THE
+                        PHYSICIANS OF GERMANY.
+                          BY J. F. C. HECKER.
+
+
+It has long been my earnest desire to address my honoured colleagues,
+especially those with whom I feel myself connected by congeniality
+of sentiment, in order to impress on them a subject in which science
+is deeply interested, and which, according to the direct evidence
+of Nature herself, is one of the most exalted and important that
+can be submitted to the researches of the learned. I allude to bee

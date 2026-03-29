@@ -250,16 +250,16 @@ offset_fd: ; do left offset for file descriptor to start processing current word
 
 
 to_stdout:
-	mov rax, 1 ; syscall write (64-bit)
-	mov rdi, 1 ; STDOUT
-	mov rsi, buffer_out
-	movzx rdx, word [idx_out] ; idx_out is offset in 'buffer_out' to first free byte so length of the written text is equal to idx_out
-	syscall
+	; mov rax, 1 ; syscall write (64-bit)
+	; mov rdi, 1 ; STDOUT
+	; mov rsi, buffer_out
+	;movzx rdx, word [idx_out] ; idx_out is offset in 'buffer_out' to first free byte so length of the written text is equal to idx_out
+;	syscall
 	; so buffer_out is in STDOUT (i hope)
 	mov word [idx_out], 0 ; because we refresh buffer_out
 	mov word [idx_in], 0 ; because we refresh buffer_in
 	
-
+	call clear_buf_in	
 	; we have no necessary to take care about the word separation and go next
 	cmp byte [last_act], 0 
 	je _start.read_file_chunk
@@ -267,6 +267,13 @@ to_stdout:
 	; if we are here then we have just printed last chunk
 	ret
 
-
+clear_buf_in:
+	mov rdi, buffer_in
+	xor rax, rax
+	mov rcx, 512
+	rep stosq
+	
+	ret
+	
 
 
