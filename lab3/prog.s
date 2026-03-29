@@ -11,6 +11,7 @@ file_desc: resq 1 ; file descriptor (узнать о нём побольше)
 buffer_in: resb 4096 ; where we temporary store the chunk of file
 buffer_out: resb 4096 ; where we collect data to be send to stdout
 
+last_act: resb 1 ; to know if the current print last or not
 flag_fw: resb 1; to know if the current processing word is first or not : 0 - first, else – no
 
 st_word: resw 1 ; to have offest for first letter of the current word
@@ -83,7 +84,7 @@ _start:
 	mov [idx_in], r8w
 
 	cmp r8, 4096
-	; je refresh_file_desc ну или типа того пока что
+	je to_stdout ; ну или типа того пока что
 	; добавить проверку на получение нуль-терминатораш
 
 	mov r9b, [buffer_in + r8 * 1] ; 
@@ -103,7 +104,7 @@ _start:
 	mov [idx_in], r8w
 
 	cmp r8, 4096 ; then we have reached the end of the 'buffer_in' and need to move 'file descriptor'
-	; je refresh_file_desc ну или типа того пока что
+	je offset_fd ; we do offset for out file descriptor
 
 
 	mov r9b, [buffer_in + r8 * 1] ; got symbol of the next symbol
@@ -164,6 +165,9 @@ error_readfile:
 	jmp _start.exit 
 
 success_end:
+	mov byte [last_act], 1
+	call to_stdout
+
 	mov rax, 1; sys_write
 	mov rdi, 1; stdout
 	mov rsi, success_msg
@@ -232,7 +236,36 @@ skip:
 	ret
 
 
+offset_fd: ; do left offset for file descriptor to start processing current word with no separation between different buffers
+	sub r10, r8 ; current read length of the word (NEGATIVE)	
 
+	mov rax, 8 ; lseek
+	mov rdi, [file_desc]
+	mov rsi, r10
+	mov rdx, 1 ; SEEK_CUR (from current)
+	syscall
+	
+	; after we should print values to STDOUT
+	jmp to_stdout
+
+
+to_stdout:
+	mov rax, 1 ; syscall write (64-bit)
+	mov rdi, 1 ; STDOUT
+	mov rsi, buffer_out
+	movzx rdx, word [idx_out] ; idx_out is offset in 'buffer_out' to first free byte so length of the written text is equal to idx_out
+	syscall
+	; so buffer_out is in STDOUT (i hope)
+	mov word [idx_out], 0 ; because we refresh buffer_out
+	mov word [idx_in], 0 ; because we refresh buffer_in
+	
+
+	; we have no necessary to take care about the word separation and go next
+	cmp byte [last_act], 0 
+	je _start.read_file_chunk
+	
+	; if we are here then we have just printed last chunk
+	ret
 
 
 
