@@ -1,7 +1,8 @@
 bits 64
 
 default rel
-extern printf, scanf, fgets, stdin, stdout, fflush
+extern printf, scanf
+extern log, sqrt
 extern fopen
 extern fclose
 extern fprintf
@@ -43,6 +44,7 @@ fmt_str: db "%s", 0 ; just for simple line of text
 fmt_dbl: db "%lf", 0 ; lonf float = double
 fmt_to_file: db "Number: %d", 9, "Value: %.40lf", 10, 0
 fmt_end: db "Left: %.40lf", 10, "Right: %.40lf", 10, 0
+fmt_fragmented_left_calc: db "Left fragmented: %.40lf", 10, 0
 
 mode_w: db "w+", 0
 
@@ -88,7 +90,7 @@ main:
 	xor rax, rax ; we mention that we have ZERO float arguments that should be in xmm0 - xmm7 registers
 	call scanf ; got X value
 
-	cmp rax, 1
+	cmp rax, 1 ; rax = number of arguments that scanf got
 	jne var_input_error
 	
 	; take abs of xval to define if it lies between borders
@@ -145,11 +147,7 @@ main:
 	mov rdx, qword [num_iter] 
 	; xmm0 already has a_n value
 	mov rax, 1 ; rax = quantity of xmm-registers with data
-	call fprintf
-	
-	mov rdx, qword [num_iter]
-	inc rdx
-	mov qword [num_iter], rdx ;
+	call fprintf	
 
 	; restore values
 	movsd xmm0, qword [cur_a_n]
@@ -162,27 +160,38 @@ main:
 	movsd xmm4, qword [sign_mask] ;
 	andpd xmm3, xmm4; xmm3 = abs(xmm3)
 
-	ucomisd xmm2, xmm3 ; if xmm2(deviation) >= xmm3(current a_n)
+	comisd xmm2, xmm3 ; if xmm2(deviation) >= xmm3(current a_n)
 	jae epilog
 	
-
 
 	call quotient ; after call we have xmm3 = quotient
 	mulsd xmm0, xmm3 ; xmm0 = a_(n + 1)
 	movsd qword [cur_a_n], xmm0
 
+	mov rdx, qword [num_iter]
+	inc rdx
+	mov qword [num_iter], rdx ;
+
 	jmp .loop
 
 epilog:
 	addsd xmm1, qword [xval] ; numerical series + x
+	movsd qword[sum], xmm1 ; save value of summary
+
 	movsd xmm0, qword [xval]
 	call asinh
 	
+	movsd xmm1, qword [sum]
+
 	lea rdi, [rel fmt_end]
 	mov rax, 2
-	call printf
+	call printf	
 
-prog_end:
+	lea rdi, [rel fmt_fragmented_left_calc] ; rdi = format of the string
+	call left_fragmented
+	; xmm0 = ln(sqrt(x^2 + 1) + x)
+	mov rax, 1 ; quantity of float-arguments
+	call printf
 
 
 	lea rdi, [rel fmt_str]
@@ -190,11 +199,19 @@ prog_end:
 	xor rax, rax
 	call printf
 
+
+	mov rdi, qword [file_handler]
+	call fclose
+
+prog_end:
+
 	add rsp, 8
 	ret
 
 
 quotient:
+	
+
 	movsd xmm3, qword [xval] ; xmm3 = x
 	mulsd xmm3, xmm3 ; xmm3 = x^2
 	movsd xmm4, qword[minus] ; xmm4 = -1.0
@@ -210,6 +227,17 @@ quotient:
 	addsd xmm4, qword [one] ; xmm4 = (2n + 3)
 	mulsd xmm4, xmm5 ; xmm4 = (2n + 2) * (2n + 3)
 	divsd xmm3, xmm4 ; xmm3 = -x^2 * (2n + 1)^2 / ((2n + 2)(2n + 3))
+	ret
+
+left_fragmented:
+	movsd xmm0, qword [xval] ; xmm0 = x
+	mulsd xmm0, xmm0 ; xmm0 = x^2
+	addsd xmm0, qword [one] ; xmm0 = x^2 + 1
+	call sqrt
+	; x = sqrt(x^2 + 1)
+	addsd xmm0, qword [xval] ; xmm0 = sqrt(x^2 + 1) + x
+	call log
+	; ln(sqrt(x^2 + 1) + x)
 	ret
 
 few_arg:
