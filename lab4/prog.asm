@@ -15,6 +15,8 @@ minus: dq -1.0
 one: dq 1.0
 six: dq 6.0
 
+argument equ 8
+
 sign_mask: dq 0x7FFFFFFFFFFFFFFF ; 1 bit = 0, other 63 equals 1
 
 ; define messages 
@@ -60,7 +62,6 @@ cur_a_n: resq 1; to avoid spoiling data after calls of libc functions
 num_iter: resq 1; reserve 64 bits to store number of current numerical series
 deval: resq 1 ; reserve 64 bits for double deviation value
 xval: resq 1 ; reserve 64 bits for double x value
-ret_code: resq 1 ; reserve memory to save return address
 
 section .text
 global main
@@ -81,8 +82,8 @@ main:
 	lea rsi, [rel greeting_msg] ; direct message
 	call printf
 
-	lea rsi, [rel fmt_str] ; simple "%s"
-	lea rdi, [rel input_x] ; direct message
+	lea rdi, [rel fmt_str] ; simple "%s"
+	lea rsi, [rel input_x] ; direct message
 	call printf
 
 	lea rdi, [rel fmt_dbl] ; we wait for double value to be input
@@ -163,8 +164,20 @@ main:
 	comisd xmm2, xmm3 ; if xmm2(deviation) >= xmm3(current a_n)
 	jae epilog
 	
+	push rbp
+	mov rbp, rsp 
+	sub rsp, 16
+	
+	mov rax, qword [xval]
+	mov [rbp - argument * 1], rax
+	mov rax, qword [num_iter]
+	mov [rbp - argument * 2], rax
 
 	call quotient ; after call we have xmm3 = quotient
+	
+	mov rsp, rbp
+	pop rbp
+
 	mulsd xmm0, xmm3 ; xmm0 = a_(n + 1)
 	movsd qword [cur_a_n], xmm0
 
@@ -211,12 +224,11 @@ prog_end:
 
 quotient:
 	
-
-	movsd xmm3, qword [xval] ; xmm3 = x
+	movq xmm3, qword [rbp - argument * 1] ; xmm3 = x
 	mulsd xmm3, xmm3 ; xmm3 = x^2
 	movsd xmm4, qword[minus] ; xmm4 = -1.0
 	mulsd xmm3, xmm4 ; xmm3 = -x^2
-	movsd xmm4, qword [num_iter]; xmm4 = n
+	movsd xmm4, qword [rbp - argument * 2]; xmm4 = n
 	mulsd xmm4, qword [two] ; xmm4 = 2*n
 	addsd xmm4, qword [one] ; xmm4 = 2*n + 1
 	movsd xmm5, xmm4 ; xmm5 = xmm4 = 2*n +1
