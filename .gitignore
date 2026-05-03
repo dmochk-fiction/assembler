@@ -4,3 +4,6 @@ expression
 *pp
 *.txt
 prog
+*.vscode
+*.jpg
+*.jpeg
