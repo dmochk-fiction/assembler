@@ -1,4 +1,4 @@
-bits-64
+bits 64
 
 ; Передача аргументов: Первые 6 аргументов целочисленного типа или
 ; указателей передаются через регистры (rdi, rsi, rdx, rcx, r8, r9), остальные — через стек.
@@ -18,7 +18,7 @@ img_averaging_asm:
 	xor rcx, rcx ; rcx = counter (i) = 0
 	mov r8, 3 ; r8 = number of colors makeing up a pixel
 	
-.loop
+.loop:
 	xor r11, r11 ; r11 = sum = 0
 	mov r9, r8 ; r9 = 3
 	imul r9, rcx ; r9 = 3 * counter
@@ -28,6 +28,7 @@ img_averaging_asm:
 
 	movzx r10, byte [rdi + r9 + 1] ; r10 = green
 	add r11, r10 ; r11 = red + green
+
 
 	movzx r10, byte [rdi + r9 + 2] ; r10 = blue
 	add r11, r10 ; r11 = red + green + blue
@@ -41,9 +42,9 @@ img_averaging_asm:
 
 	pop rax
 
-	mov byte [rdi + r9 + 0], r11
-	mov byte [rdi + r9 + 1], r11
-	mov byte [rdi + r9 + 2], r11
+	mov byte [rdi + r9 + 0], r11b
+	mov byte [rdi + r9 + 1], r11b
+	mov byte [rdi + r9 + 2], r11b
 
 	inc rcx
 	cmp rcx, rax

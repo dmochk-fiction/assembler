@@ -94,8 +94,11 @@ int main(int argc, char *argv[]) {
     strcpy(img_out_copy, img_out);
     strcpy(img_out_copy + strlen(img_out), "_copy");	
 
-    // int result_asm = stbi_write_jpg(img_out, width, heigth, channels, img_data, 90);
-    // int result_c = stbi_write_jpg(img_out_copy, width, heigth, channels, img_data, 90);
+    int result_asm = stbi_write_jpg(img_out, width, heigth, channels, img_data, 90);
+    int result_c = stbi_write_jpg(img_out_copy, width, heigth, channels, img_data, 90);
 
+    task_status = (result_asm != 0 && result_c != 0);
+
+    progEnd(task_status, img_in);
     return 0;
 }
